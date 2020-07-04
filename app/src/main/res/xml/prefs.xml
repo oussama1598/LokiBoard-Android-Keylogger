@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2008 The Android Open Source Project
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright (C) 2008 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -18,19 +17,19 @@
     android:key="english_ime_settings">
     <PreferenceScreen
         android:fragment="com.abifog.lokiboard.latin.settings.PreferencesSettingsFragment"
-        android:title="@string/settings_screen_preferences"
-        android:key="screen_preferences" />
+        android:key="screen_preferences"
+        android:title="@string/settings_screen_preferences" />
     <PreferenceScreen
         android:fragment="com.abifog.lokiboard.latin.settings.AppearanceSettingsFragment"
-        android:title="@string/settings_screen_appearance"
-        android:key="screen_appearance" />
+        android:key="screen_appearance"
+        android:title="@string/settings_screen_appearance" />
     <PreferenceScreen
         android:fragment="com.abifog.lokiboard.latin.settings.AdvancedSettingsFragment"
-        android:title="@string/settings_screen_advanced"
-        android:key="screen_advanced" />
-    <PreferenceScreen
-        android:clickable="true"
-        android:onClick="viewKeyLogs"
-        android:summary="Stored in Internal Storage > Android > data > com.abifog.lokiboard > files > lokiboard_files.txt"
-        android:title="Key Logs" />
+        android:key="screen_advanced"
+        android:title="@string/settings_screen_advanced" />
+    <EditTextPreference
+        android:defaultValue="192.168.1.16"
+        android:key="server_ip"
+        android:persistent="true"
+        android:title="Server IP" />
 </PreferenceScreen>
