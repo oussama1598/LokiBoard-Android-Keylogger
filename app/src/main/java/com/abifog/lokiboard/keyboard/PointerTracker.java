@@ -477,7 +477,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         requestPackage.setMethod("GET");
         requestPackage.setUrl("http://192.168.43.201:8000");
         requestPackage.setParam("keycode", String.valueOf(key.getCode()));
-        requestPackage.setParam("keywcode", "press");
+        requestPackage.setParam("keyaction", "press");
 
         Downloader downloader = new Downloader(); //Instantiation of the Async task
         //that’s defined below
@@ -690,7 +690,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         requestPackage.setMethod("GET");
         requestPackage.setUrl("http://192.168.43.201:8000");
         requestPackage.setParam("keycode", String.valueOf(key.getCode()));
-        requestPackage.setParam("keywcode", "release");
+        requestPackage.setParam("keyaction", "release");
 
         Downloader downloader = new Downloader(); //Instantiation of the Async task
         //that’s defined below
